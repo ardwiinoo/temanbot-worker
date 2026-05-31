@@ -20,15 +20,29 @@ app.get("/health", async () => {
   };
 });
 
-app.post("/process-cv", async (request, reply) => {
+function getWorkerSecretFromRequest(request: any) {
   const authorization = request.headers.authorization;
-  const expected = `Bearer ${config.workerSecret}`;
 
-  if (authorization !== expected) {
-    return reply.status(401).send({
-      message: "Unauthorized",
-    });
+  if (authorization?.startsWith("Bearer ")) {
+    return authorization.replace("Bearer ", "").trim();
   }
+
+  const headerSecret = request.headers["x-worker-secret"];
+
+  if (Array.isArray(headerSecret)) {
+    return headerSecret[0];
+  }
+
+  return headerSecret;
+}
+
+app.post("/process-cv", async (request, reply) => {
+    const incomingSecret = getWorkerSecretFromRequest(request);
+    if (incomingSecret !== config.workerSecret) {
+        return reply.status(401).send({
+            message: "Unauthorized",
+        });
+    }
 
   const body = processCvBodySchema.parse(request.body);
 
