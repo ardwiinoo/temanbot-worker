@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { config } from "./config";
 import { processCvThread } from "./cv/process-cv-thread";
+import { processApplicationKit } from "./cv/process-application-kit";
 
 const app = Fastify({
   logger: true,
@@ -11,6 +12,10 @@ const app = Fastify({
 
 const processCvBodySchema = z.object({
   thread_id: z.string().uuid(),
+});
+
+const generateApplicationKitBodySchema = z.object({
+  application_kit_id: z.string().uuid(),
 });
 
 app.get("/health", async () => {
@@ -47,6 +52,24 @@ app.post("/process-cv", async (request, reply) => {
   const body = processCvBodySchema.parse(request.body);
 
   const result = await processCvThread(body.thread_id);
+
+  return {
+    data: result,
+  };
+});
+
+app.post("/generate-application-kit", async (request, reply) => {
+  const incomingSecret = getWorkerSecretFromRequest(request);
+
+  if (incomingSecret !== config.workerSecret) {
+    return reply.status(401).send({
+      message: "Unauthorized",
+    });
+  }
+
+  const body = generateApplicationKitBodySchema.parse(request.body);
+
+  const result = await processApplicationKit(body.application_kit_id);
 
   return {
     data: result,
