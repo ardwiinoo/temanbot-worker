@@ -23,6 +23,17 @@ export const cvRecommendationTypeEnum = pgEnum("cv_recommendation_type", [
   "cv_improvement",
 ]);
 
+export const applicationKitStatusEnum = pgEnum("application_kit_status", [
+  "processing",
+  "ready",
+  "failed",
+]);
+
+export const applicationKitDocumentTypeEnum = pgEnum(
+  "application_kit_document_type",
+  ["ats_cv", "cover_letter", "recruiter_message", "interview_notes"],
+);
+
 export const cvThreads = pgTable("cv_threads", {
   id: uuid("id").defaultRandom().primaryKey(),
 
@@ -54,6 +65,54 @@ updatedAt: timestamp("updated_at", { withTimezone: true })
   .notNull()
   .defaultNow(),
 });
+
+export const applicationKits = pgTable("application_kits", {
+  id: uuid("id").defaultRandom().primaryKey(),
+
+  workspaceId: uuid("workspace_id").notNull(),
+  userId: uuid("user_id").notNull(),
+  cvThreadId: uuid("cv_thread_id").notNull(),
+
+  title: text("title").notNull(),
+  companyName: text("company_name"),
+  jobTitle: text("job_title"),
+  jobDescription: text("job_description").notNull(),
+
+  status: applicationKitStatusEnum("status").notNull(),
+  matchScore: integer("match_score"),
+  matchReportJson: jsonb("match_report_json"),
+
+  errorMessage: text("error_message"),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
+
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+export const applicationKitDocuments = pgTable(
+  "application_kit_documents",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    applicationKitId: uuid("application_kit_id").notNull(),
+
+    type: applicationKitDocumentTypeEnum("type").notNull(),
+    title: text("title").notNull(),
+
+    contentJson: jsonb("content_json"),
+    contentHtml: text("content_html"),
+    contentText: text("content_text"),
+    contentHash: text("content_hash"),
+
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+);
 
 export const cvProfiles = pgTable("cv_profiles", {
   id: uuid("id").defaultRandom().primaryKey(),
